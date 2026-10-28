@@ -15,11 +15,25 @@ jobs:
         shell: cmd
 
     steps:
+      - name: Prepare directories
+        run: |
+          mkdir "%userprofile%\TBuild\Libraries"
+          mkdir "%userprofile%\TBuild\ThirdParty"
+          mklink /d "%GITHUB_WORKSPACE%\TBuild" "%userprofile%\TBuild"
+          echo TBUILD=%userprofile%\TBuild>>%GITHUB_ENV%
+          echo LibrariesPath=%userprofile%\TBuild\Libraries\win64>>%GITHUB_ENV%
+
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 1
+          path: TBuild\tdesktop
+
+      - name: Setup MSYS2
+        run: |
+          mklink /J "%TBUILD%\ThirdParty\msys64" C:\msys64
+          C:\msys64\usr\bin\pacman.exe -S --noconfirm --needed make mingw-w64-x86_64-diffutils mingw-w64-x86_64-gperf mingw-w64-x86_64-nasm mingw-w64-x86_64-perl mingw-w64-x86_64-pkgconf
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -32,37 +46,28 @@ jobs:
           arch: x64
           toolset: 14.44
 
-      - name: Cache TBuild Libraries
-        uses: actions/cache@v4
-        with:
-          path: |
-            Libraries
-            ThirdParty
-          key: ${{ runner.os }}-tbuild-${{ hashFiles('Telegram/build/prepare/prepare.py') }}
-          restore-keys: |
-            ${{ runner.os }}-tbuild-
-
       - name: Prepare Libraries
         run: |
-          call Telegram\build\prepare\win.bat
+          cd "%TBUILD%\tdesktop"
+          call Telegram\build\prepare\win.bat silent qt6
 
       - name: Configure CMake
         run: |
-          cd Telegram
+          cd "%TBUILD%\tdesktop\Telegram"
           call configure.bat x64 -D TDESKTOP_API_ID=2040 -D TDESKTOP_API_HASH=b18441a1ff607e10a989891a5462e627
 
       - name: Build AyuGram Release
         run: |
-          cmake --build out --config Release --target Telegram
+          cmake --build "%TBUILD%\tdesktop\out" --config Release --target Telegram
 
       - name: Package AyuGram Portable
         run: |
-          mkdir AyuGram_Portable
-          copy out\Release\AyuGram.exe AyuGram_Portable\
-          powershell Compress-Archive -Path AyuGram_Portable\* -DestinationPath AyuGram_Windows_x64.zip
+          mkdir "%TBUILD%\AyuGram_Portable"
+          copy "%TBUILD%\tdesktop\out\Release\AyuGram.exe" "%TBUILD%\AyuGram_Portable\"
+          powershell Compress-Archive -Path "%TBUILD%\AyuGram_Portable\*" -DestinationPath "%GITHUB_WORKSPACE%\AyuGram-Windows-x64.zip"
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: AyuGram-Windows-x64
-          path: AyuGram_Windows_x64.zip
+          path: AyuGram-Windows-x64.zip
