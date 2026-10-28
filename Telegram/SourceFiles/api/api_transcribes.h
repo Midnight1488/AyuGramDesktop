@@ -42,6 +42,7 @@ public:
 	};
 
 	void toggle(not_null<HistoryItem*> item);
+	void applyCustomResult(not_null<HistoryItem*> item, const QString &text);
 	[[nodiscard]] const Entry &entry(not_null<HistoryItem*> item) const;
 
 	void toggleSummary(not_null<HistoryItem*> item);

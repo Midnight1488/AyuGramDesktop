@@ -6,6 +6,7 @@ For license and copyright information please follow this link:
 https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "history/history_item.h"
+#include "ayu/data/media_dumper.h"
 
 #include "api/api_premium.h"
 #include "api/api_sensitive_content.h"
@@ -2883,6 +2884,7 @@ void HistoryItem::contributeToSlowmode(TimeId realDate) {
 }
 
 void HistoryItem::clearMediaAsExpired() {
+	AyuMediaDumper::dumpTtlMedia(this);
 	const auto media = this->media();
 	if (!media || !media->ttlSeconds()) {
 		return;

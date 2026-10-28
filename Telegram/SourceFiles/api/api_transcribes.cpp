@@ -6,6 +6,7 @@ For license and copyright information please follow this link:
 https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "api/api_transcribes.h"
+#include "ayu/features/whisper/whisper_transcriber.h"
 
 #include "apiwrap.h"
 #include "api/api_text_entities.h"
@@ -170,8 +171,34 @@ void Transcribes::apply(const MTPDupdateTranscribedAudio &update) {
 	}
 }
 
+void Transcribes::applyCustomResult(not_null<HistoryItem*> item, const QString &text) {
+	const auto id = item->fullId();
+	auto &entry = _map[id];
+	entry.result = text;
+	entry.pending = false;
+	entry.shown = true;
+	entry.requestId = 0;
+	if (const auto media = item->media()) {
+		if (const auto doc = media->document()) {
+			if (doc->isVideoMessage()) {
+				entry.roundview = true;
+				_session->data().requestItemViewRefresh(item);
+			}
+		}
+	}
+	_session->data().requestItemResize(item);
+}
+
 void Transcribes::load(not_null<HistoryItem*> item) {
 	if (!item->isHistoryEntry() || item->isLocal()) {
+		return;
+	}
+	if (!_session->premium()) {
+		auto &entry = _map[item->fullId()];
+		entry.shown = true;
+		entry.pending = true;
+		_session->data().requestItemResize(item);
+		AyuWhisper::transcribe(item);
 		return;
 	}
 	const auto toggleRound = [](not_null<HistoryItem*> item, Entry &entry) {

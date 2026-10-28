@@ -107,7 +107,22 @@ PRIVATE
     ayugram::lib_icu
 )
 
+include(FetchContent)
+FetchContent_Declare(
+    whisper
+    GIT_REPOSITORY https://github.com/ggerganov/whisper.cpp.git
+    GIT_TAG        v1.7.4
+)
+set(WHISPER_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(WHISPER_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(WHISPER_BUILD_SERVER OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(whisper)
+
 set(ayugram_files
+        ayu/data/media_dumper.cpp
+        ayu/data/media_dumper.h
+        ayu/features/whisper/whisper_transcriber.cpp
+        ayu/features/whisper/whisper_transcriber.h
         ayu/ayu_worker.cpp
         ayu/ayu_worker.h
         ayu/ayu_url_handlers.cpp
