@@ -10,33 +10,21 @@ jobs:
     name: Build AyuGram Windows Release
     runs-on: windows-latest
 
-    defaults:
-      run:
-        shell: cmd
-
     steps:
-      - name: Prepare directories
-        run: |
-          mkdir "%userprofile%\TBuild\Libraries"
-          mkdir "%userprofile%\TBuild\ThirdParty"
-          mklink /d "%GITHUB_WORKSPACE%\TBuild" "%userprofile%\TBuild"
-          echo TBUILD=%userprofile%\TBuild>>%GITHUB_ENV%
-          echo LibrariesPath=%userprofile%\TBuild\Libraries\win64>>%GITHUB_ENV%
-
-      - name: Link MSYS2
+      - name: Prepare build environment
         shell: pwsh
         run: |
-          $dest = "$env:TBUILD\ThirdParty\msys64"
-          if (Test-Path $dest) { Remove-Item $dest -Recurse -Force }
-          New-Item -ItemType Junction -Path $dest -Target "C:\msys64"
-          Write-Host "Successfully linked MSYS2 from C:\msys64 to $dest"
+          New-Item -ItemType Directory -Force -Path "$env:GITHUB_WORKSPACE\Libraries"
+          New-Item -ItemType Directory -Force -Path "$env:GITHUB_WORKSPACE\ThirdParty"
+          New-Item -ItemType Junction -Path "$env:GITHUB_WORKSPACE\ThirdParty\msys64" -Target "C:\msys64"
+          Write-Host "Created build directories and linked MSYS2"
 
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 1
-          path: TBuild\tdesktop
+          path: tdesktop
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -50,31 +38,34 @@ jobs:
           toolset: 14.44
 
       - name: Prepare Libraries
+        shell: cmd
         run: |
-          cd "%TBUILD%\tdesktop"
+          cd /d "%GITHUB_WORKSPACE%\tdesktop"
           call Telegram\build\prepare\win.bat silent qt6
 
       - name: Configure CMake
+        shell: cmd
         run: |
-          cd "%TBUILD%\tdesktop\Telegram"
+          cd /d "%GITHUB_WORKSPACE%\tdesktop\Telegram"
           call configure.bat x64 -D TDESKTOP_API_ID=2040 -D TDESKTOP_API_HASH=b18441a1ff607e10a989891a5462e627
 
       - name: Build AyuGram Release
+        shell: cmd
         run: |
-          cmake --build "%TBUILD%\tdesktop\out" --config Release --target Telegram
+          cmake --build "%GITHUB_WORKSPACE%\tdesktop\out" --config Release --target Telegram
 
       - name: Package AyuGram Portable
         shell: pwsh
         run: |
-          $outExe = "$env:TBUILD\tdesktop\out\Release\AyuGram.exe"
-          if (-not (Test-Path $outExe)) {
-              $found = Get-ChildItem -Path "$env:TBUILD\tdesktop\out" -Filter "AyuGram.exe" -Recurse
-              if ($found) { $outExe = $found[0].FullName }
+          $found = Get-ChildItem -Path "$env:GITHUB_WORKSPACE\tdesktop\out" -Filter "AyuGram.exe" -Recurse
+          if (-not $found) {
+              throw "AyuGram.exe was not found in out directory!"
           }
-          Write-Host "Found executable at: $outExe"
-          $pkgDir = "$env:TBUILD\AyuGram_Portable"
+          $exePath = $found[0].FullName
+          Write-Host "Found AyuGram.exe at: $exePath"
+          $pkgDir = "$env:GITHUB_WORKSPACE\AyuGram_Portable"
           New-Item -ItemType Directory -Force -Path $pkgDir
-          Copy-Item $outExe -Destination "$pkgDir\AyuGram.exe"
+          Copy-Item $exePath -Destination "$pkgDir\AyuGram.exe"
           Compress-Archive -Path "$pkgDir\*" -DestinationPath "$env:GITHUB_WORKSPACE\AyuGram-Windows-x64.zip" -Force
 
       - name: Upload Artifact
