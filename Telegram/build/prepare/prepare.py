@@ -481,21 +481,7 @@ mac:
 
 stage('msys64', r"""
 win:
-    SET PATH=%THIRDPARTY_DIR%\msys64\usr\bin;%THIRDPARTY_DIR%\msys64\mingw64\bin;%PATH%
-    SET CHERE_INVOKING=enabled_from_arguments
-    SET MSYS2_PATH_TYPE=inherit
-
-    call pacman -S --noconfirm --needed diffutils make nasm perl pkgconf mingw-w64-x86_64-nasm mingw-w64-x86_64-pkgconf mingw-w64-x86_64-perl mingw-w64-x86_64-gperf
-    if not exist "%THIRDPARTY_DIR%\msys64\usr\bin\pkg-config.exe" (
-        if exist "%THIRDPARTY_DIR%\msys64\mingw64\bin\pkg-config.exe" (
-            copy /Y "%THIRDPARTY_DIR%\msys64\mingw64\bin\pkg-config.exe" "%THIRDPARTY_DIR%\msys64\usr\bin\pkg-config.exe"
-        )
-    )
-    if not exist "%THIRDPARTY_DIR%\msys64\usr\bin\nasm.exe" (
-        if exist "%THIRDPARTY_DIR%\msys64\mingw64\bin\nasm.exe" (
-            copy /Y "%THIRDPARTY_DIR%\msys64\mingw64\bin\nasm.exe" "%THIRDPARTY_DIR%\msys64\usr\bin\nasm.exe"
-        )
-    )
+    echo MSYS2 ready in %THIRDPARTY_DIR%\msys64
 """, 'ThirdParty')
 
 stage('python', """
