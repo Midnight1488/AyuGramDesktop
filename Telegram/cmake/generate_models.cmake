@@ -24,7 +24,7 @@ find_package(Python3 REQUIRED)
 set(_models_script "${CMAKE_CURRENT_SOURCE_DIR}/cmake/obj2binobj.py")
 set(_models_out_dir "${CMAKE_CURRENT_BINARY_DIR}/models")
 set(_model_outputs)
-set(_qrc_entries)
+set(_qrc_files)
 foreach(_src ${_model_sources})
     file(RELATIVE_PATH _rel "${_models_art_dir}" "${_src}")
     string(REGEX REPLACE "\\.obj$" ".binobj" _rel_bin "${_rel}")
@@ -39,30 +39,27 @@ foreach(_src ${_model_sources})
         COMMENT "Baking model: ${_rel} -> ${_rel_bin}"
         VERBATIM)
     list(APPEND _model_outputs ${_out})
-    list(APPEND _qrc_entries "        <file alias=\"art/${_rel_bin}\">${_rel_bin}</file>")
+
+    string(REGEX REPLACE "[^a-zA-Z0-9_]" "_" _safe_name "${_rel_bin}")
+    set(_qrc_path "${_models_out_dir}/models_${_safe_name}.qrc")
+    set(_qrc_new "<RCC>\n    <qresource prefix=\"/gui\">\n        <file alias=\"art/${_rel_bin}\">${_rel_bin}</file>\n    </qresource>\n</RCC>\n")
+    set(_qrc_old "")
+    if (EXISTS "${_qrc_path}")
+        file(READ "${_qrc_path}" _qrc_old)
+    endif()
+    if (NOT "${_qrc_new}" STREQUAL "${_qrc_old}")
+        file(WRITE "${_qrc_path}" "${_qrc_new}")
+    endif()
+
+    set_source_files_properties("${_qrc_path}" PROPERTIES
+        QRC_GENERATED_FROM "${_models_script};${_src}")
+    list(APPEND _qrc_files "models_${_safe_name}.qrc")
 endforeach()
 
-# Write models.qrc at configure time (so AUTORCC can scan its inputs), only
-# touching it when content changes — matching cmake/qrhi_shaders.cmake.
-list(SORT _qrc_entries)
-list(JOIN _qrc_entries "\n" _qrc_body)
-set(_qrc_path "${_models_out_dir}/models.qrc")
-set(_qrc_new "<RCC>\n    <qresource prefix=\"/gui\">\n${_qrc_body}\n    </qresource>\n</RCC>\n")
-set(_qrc_old "")
-if (EXISTS "${_qrc_path}")
-    file(READ "${_qrc_path}" _qrc_old)
-endif()
-if (NOT "${_qrc_new}" STREQUAL "${_qrc_old}")
-    file(WRITE "${_qrc_path}" "${_qrc_new}")
-endif()
-
-# target_prepare_qrc() skips build-tree paths, so declare the .binobj sources.
-set_source_files_properties("${_qrc_path}" PROPERTIES
-    QRC_GENERATED_FROM "${_models_script};${_model_sources}")
 add_custom_target(bake_models DEPENDS ${_model_outputs})
 nice_target_sources(Telegram ${_models_out_dir}
 PRIVATE
-    models.qrc
+    ${_qrc_files}
 )
 add_dependencies(Telegram bake_models)
 message(STATUS "Models: will bake ${_models_art_dir}/**/*.obj -> .binobj")
