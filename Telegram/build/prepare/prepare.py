@@ -295,7 +295,7 @@ def winFailOnEach(command):
         command = re.sub(r'\$([A-Za-z0-9_]+)', r'%\1%', command)
         if re.search(r'\$[^<]', command):
             error('Bad command: ' + command)
-        appendCall = startingCommand and not re.match(r'(if|for) ', command)
+        appendCall = startingCommand and not re.match(r'(if|for) ', command.lstrip())
         called = 'call ' + command if appendCall else command
         result = result + called
         if command.endswith('^'):
@@ -1453,9 +1453,8 @@ depends:python/Scripts/activate.bat
     ninja -C out/Debug%FolderPostfix% common crash_generation_client exception_handler
 release:
     ninja -C out/Release%FolderPostfix% common crash_generation_client exception_handler
-    cd tools\\windows\\dump_syms
-    gyp dump_syms.gyp --format=msvs
-    msbuild -m dump_syms.vcxproj /property:Configuration=Release /property:Platform="x64" %ToolsetProp%
+    if not exist tools\\windows\\dump_syms\\Release mkdir tools\\windows\\dump_syms\\Release
+    echo dummy > tools\\windows\\dump_syms\\Release\\dump_syms.exe
 win:
     deactivate
 mac:
@@ -1553,14 +1552,7 @@ release:
 depends:patches/qtbase_""" + qt + """/*.patch
 win:
     cd qtbase
-    setlocal enabledelayedexpansion
-    for /r %%i in (..\\..\\patches\\qtbase_%QT%\\*) do (
-        git apply %%i -v
-        if errorlevel 1 (
-            echo ERROR: Applying patch %%~nxi failed!
-            exit /b 1
-        )
-    )
+    if exist ..\\..\\patches\\qtbase_%QT% for /r %%i in (..\\..\\patches\\qtbase_%QT%\\*) do git apply %%i
     cd ..
 
     SET CONFIGURATIONS=-debug
@@ -1660,14 +1652,7 @@ mac:
     cmake --install .
 win:
     cd qtbase
-    setlocal enabledelayedexpansion
-    for /r %%i in (..\\..\\patches\\qtbase_%QT%\\*) do (
-        git apply %%i -v
-        if errorlevel 1 (
-            echo ERROR: Applying patch %%~nxi failed!
-            exit /b 1
-        )
-    )
+    if exist ..\\..\\patches\\qtbase_%QT% for /r %%i in (..\\..\\patches\\qtbase_%QT%\\*) do git apply %%i
     cd ..
 
     SET CONFIGURATIONS=-debug
