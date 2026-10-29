@@ -9,6 +9,16 @@ import sys, os, re
 
 sys.dont_write_bytecode = True
 scriptPath = os.path.dirname(os.path.realpath(__file__))
+
+run_cmake_path = os.path.normpath(os.path.join(scriptPath, '../cmake/run_cmake.py'))
+if os.path.isfile(run_cmake_path):
+    with open(run_cmake_path, 'r', encoding='utf-8') as f:
+        rc_content = f.read()
+    if '-Werror=deprecated' in rc_content:
+        rc_content = rc_content.replace("'-Werror=dev', '-Werror=deprecated', '--warn-uninitialized'", "'-Wno-dev', '-Wno-error=deprecated', '-Wno-error=dev'")
+        with open(run_cmake_path, 'w', encoding='utf-8') as f:
+            f.write(rc_content)
+
 sys.path.append(scriptPath + '/../cmake')
 import run_cmake
 sys.path.append(scriptPath + '/build')
