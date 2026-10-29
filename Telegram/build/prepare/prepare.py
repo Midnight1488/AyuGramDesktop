@@ -465,7 +465,7 @@ mac:
     git checkout 7387476bb3b7200d3b044015696cb3c28f78593c
 """)
 
-stage('msys64', """
+stage('msys64', r"""
 win:
     SET PATH=%THIRDPARTY_DIR%\msys64\usr\bin;%PATH%
     SET CHERE_INVOKING=enabled_from_arguments
