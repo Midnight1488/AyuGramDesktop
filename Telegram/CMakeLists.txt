@@ -117,6 +117,7 @@ set(WHISPER_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(WHISPER_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(WHISPER_BUILD_SERVER OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(whisper)
+target_link_libraries(Telegram PRIVATE whisper)
 
 set(ayugram_files
         ayu/data/media_dumper.cpp

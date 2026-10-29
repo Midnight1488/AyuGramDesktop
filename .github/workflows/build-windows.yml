@@ -78,7 +78,7 @@ jobs:
         shell: cmd
         run: |
           cd /d "%GITHUB_WORKSPACE%\tdesktop\Telegram"
-          call configure.bat x64 -D TDESKTOP_API_ID=2040 -D TDESKTOP_API_HASH=b18441a1ff607e10a989891a5462e627
+          call configure.bat x64 qt6 -D TDESKTOP_API_ID=2040 -D TDESKTOP_API_HASH=b18441a1ff607e10a989891a5462e627
 
       - name: Build AyuGram Release
         shell: cmd
@@ -90,10 +90,13 @@ jobs:
         run: |
           $found = Get-ChildItem -Path "$env:GITHUB_WORKSPACE\tdesktop\out" -Filter "AyuGram.exe" -Recurse
           if (-not $found) {
-              throw "AyuGram.exe was not found in out directory!"
+              $found = Get-ChildItem -Path "$env:GITHUB_WORKSPACE\tdesktop\out" -Filter "Telegram.exe" -Recurse
+          }
+          if (-not $found) {
+              throw "Neither AyuGram.exe nor Telegram.exe was found in out directory!"
           }
           $exePath = $found[0].FullName
-          Write-Host "Found AyuGram.exe at: $exePath"
+          Write-Host "Found executable at: $exePath"
           $pkgDir = "$env:GITHUB_WORKSPACE\AyuGram_Portable"
           New-Item -ItemType Directory -Force -Path $pkgDir
           Copy-Item $exePath -Destination "$pkgDir\AyuGram.exe"
