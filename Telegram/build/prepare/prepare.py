@@ -405,7 +405,7 @@ def runStages():
         prefix = '[' + str(index) + '/' + str(count) + '](' + stage['location'] + '/' + stage['name'] + version + ')'
         print(prefix + ': ', end = '', flush=True)
         stage['key'] = computeCacheKey(stage)
-        commands = removeDir(stage['name']) + '\n' + stage['commands']
+        commands = (removeDir(stage['name']) + '\n' if stage['name'] != 'msys64' else '') + stage['commands']
         checkResult = 'Forced' if len(onlyStages) > 0 else checkCacheKey(stage)
         if checkResult == 'Good':
             print('SKIPPING')
@@ -481,6 +481,9 @@ mac:
 
 stage('msys64', r"""
 win:
+    if not exist "%THIRDPARTY_DIR%\msys64\usr\bin\bash.exe" (
+        powershell -Command "New-Item -ItemType Junction -Force -Path '%THIRDPARTY_DIR%\msys64' -Target 'C:\msys64'"
+    )
     echo MSYS2 ready in %THIRDPARTY_DIR%\msys64
 """, 'ThirdParty')
 
