@@ -217,7 +217,7 @@ stages = []
 
 def removeDir(folder):
     if win:
-        return 'if exist ' + folder + ' rmdir /Q /S ' + folder + '\nif exist ' + folder + ' exit /b 1'
+        return 'if exist ' + folder + ' rmdir /Q /S ' + folder
     return 'rm -rf ' + folder
 
 def setVar(key, multilineValue):
@@ -316,7 +316,7 @@ def run(commands):
         if os.path.exists("command.bat"):
             os.remove("command.bat")
         with open("command.bat", 'w') as file:
-            file.write('@echo OFF\r\nset "NoDefaultCurrentDirectoryInExePath="\r\n' + winFailOnEach(commands))
+            file.write('@echo ON\r\nset "NoDefaultCurrentDirectoryInExePath="\r\n' + winFailOnEach(commands))
         batPath = os.path.abspath("command.bat")
         proc = subprocess.run(batPath, shell=True, env=modifiedEnv)
         result = proc.returncode == 0
@@ -324,7 +324,7 @@ def run(commands):
             print(f"[ERROR] Command exited with code: {proc.returncode}")
             for root, dirs, files in os.walk("."):
                 for f in files:
-                    if f == "config.log":
+                    if f in ["config.log", "CMakeError.log", "CMakeOutput.log"]:
                         p = os.path.join(root, f)
                         print(f"=== Last 50 lines of {p} ===")
                         try:

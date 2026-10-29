@@ -53,19 +53,18 @@ jobs:
           arch: x64
           toolset: 14.44
 
-      - name: Cache Prepared Libraries
-        uses: actions/cache@v4
-        with:
-          path: Libraries/win64
-          key: tdesktop-libs-${{ runner.os }}-${{ hashFiles('tdesktop/Telegram/build/prepare/prepare.py') }}
-          restore-keys: |
-            tdesktop-libs-${{ runner.os }}-
-
       - name: Prepare Libraries
         shell: cmd
         run: |
           cd /d "%GITHUB_WORKSPACE%\tdesktop"
           call Telegram\build\prepare\win.bat silent qt6
+
+      - name: Cache Prepared Libraries
+        if: success()
+        uses: actions/cache/save@v4
+        with:
+          path: Libraries/win64
+          key: tdesktop-libs-${{ runner.os }}-${{ hashFiles('tdesktop/Telegram/build/prepare/prepare.py') }}
 
       - name: Configure CMake
         shell: cmd
