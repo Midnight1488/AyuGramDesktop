@@ -53,13 +53,23 @@ foreach(_src ${_model_sources})
 
     set_source_files_properties("${_qrc_path}" PROPERTIES
         QRC_GENERATED_FROM "${_models_script};${_src}")
-    list(APPEND _qrc_files "models_${_safe_name}.qrc")
+    list(APPEND _qrc_files "${_qrc_path}")
 endforeach()
 
 add_custom_target(bake_models DEPENDS ${_model_outputs})
-nice_target_sources(Telegram ${_models_out_dir}
-PRIVATE
-    ${_qrc_files}
+
+add_library(telegram_models OBJECT)
+target_sources(telegram_models PRIVATE ${_qrc_files})
+set_target_properties(telegram_models PROPERTIES
+    AUTOMOC OFF
+    AUTOUIC OFF
+    AUTORCC ON
 )
-add_dependencies(Telegram bake_models)
+if (MSVC)
+    target_compile_options(telegram_models PRIVATE /bigobj)
+endif()
+target_link_libraries(telegram_models PRIVATE desktop-app::external_qt)
+add_dependencies(telegram_models bake_models)
+
+target_link_libraries(Telegram PRIVATE telegram_models)
 message(STATUS "Models: will bake ${_models_art_dir}/**/*.obj -> .binobj")

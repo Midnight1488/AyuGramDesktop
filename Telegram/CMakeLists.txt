@@ -120,7 +120,7 @@ set(WHISPER_BUILD_SERVER OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(whisper)
 target_link_libraries(Telegram PRIVATE whisper)
 if (MSVC)
-    target_compile_options(Telegram PRIVATE /bigobj /Zm300)
+    target_compile_options(Telegram PRIVATE /bigobj)
 endif()
 
 set(ayugram_files
