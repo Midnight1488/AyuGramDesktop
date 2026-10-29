@@ -318,8 +318,22 @@ def run(commands):
         with open("command.bat", 'w') as file:
             file.write('@echo OFF\r\nset "NoDefaultCurrentDirectoryInExePath="\r\n' + winFailOnEach(commands))
         batPath = os.path.abspath("command.bat")
-        result = subprocess.run(batPath, shell=True, env=modifiedEnv).returncode == 0
-        if result and os.path.exists("command.bat"):
+        proc = subprocess.run(batPath, shell=True, env=modifiedEnv)
+        result = proc.returncode == 0
+        if not result:
+            print(f"[ERROR] Command exited with code: {proc.returncode}")
+            for root, dirs, files in os.walk("."):
+                for f in files:
+                    if f == "config.log":
+                        p = os.path.join(root, f)
+                        print(f"=== Last 50 lines of {p} ===")
+                        try:
+                            with open(p, "r", encoding="utf-8", errors="replace") as lf:
+                                log_lines = lf.readlines()
+                                print("".join(log_lines[-50:]))
+                        except Exception as e:
+                            print(f"Could not read {p}: {e}")
+        elif os.path.exists("command.bat"):
             os.remove("command.bat")
         return result
     elif re.search(r'\%', commands):
@@ -467,20 +481,21 @@ mac:
 
 stage('msys64', r"""
 win:
-    SET PATH=%THIRDPARTY_DIR%\msys64\usr\bin;%PATH%
+    SET PATH=%THIRDPARTY_DIR%\msys64\usr\bin;%THIRDPARTY_DIR%\msys64\mingw64\bin;%PATH%
     SET CHERE_INVOKING=enabled_from_arguments
     SET MSYS2_PATH_TYPE=inherit
 
-    if exist "%THIRDPARTY_DIR%\msys64\usr\bin\bash.exe" (
-        echo MSYS2 already ready at %THIRDPARTY_DIR%\msys64.
-        exit /b 0
+    call pacman -S --noconfirm --needed diffutils make nasm perl pkgconf mingw-w64-x86_64-nasm mingw-w64-x86_64-pkgconf mingw-w64-x86_64-perl mingw-w64-x86_64-gperf
+    if not exist "%THIRDPARTY_DIR%\msys64\usr\bin\pkg-config.exe" (
+        if exist "%THIRDPARTY_DIR%\msys64\mingw64\bin\pkg-config.exe" (
+            copy /Y "%THIRDPARTY_DIR%\msys64\mingw64\bin\pkg-config.exe" "%THIRDPARTY_DIR%\msys64\usr\bin\pkg-config.exe"
+        )
     )
-    powershell -Command "iwr -OutFile ./msys64.exe https://github.com/msys2/msys2-installer/releases/download/2026-09-27/msys2-base-x86_64-20260927.sfx.exe"
-    msys64.exe -y -o.
-    del msys64.exe
-
-    bash -c "pacman-key --init; pacman-key --populate; pacman -Syu --noconfirm"
-    pacman -Syu --noconfirm make diffutils mingw-w64-ucrt-x86_64-gperf mingw-w64-ucrt-x86_64-nasm mingw-w64-ucrt-x86_64-perl mingw-w64-ucrt-x86_64-pkgconf
+    if not exist "%THIRDPARTY_DIR%\msys64\usr\bin\nasm.exe" (
+        if exist "%THIRDPARTY_DIR%\msys64\mingw64\bin\nasm.exe" (
+            copy /Y "%THIRDPARTY_DIR%\msys64\mingw64\bin\nasm.exe" "%THIRDPARTY_DIR%\msys64\usr\bin\nasm.exe"
+        )
+    )
 """, 'ThirdParty')
 
 stage('python', """

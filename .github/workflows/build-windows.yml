@@ -19,6 +19,22 @@ jobs:
           New-Item -ItemType Junction -Path "$env:GITHUB_WORKSPACE\ThirdParty\msys64" -Target "C:\msys64"
           Write-Host "Created build directories and linked MSYS2"
 
+      - name: Install MSYS2 Build Tools
+        shell: cmd
+        run: |
+          SET PATH=C:\msys64\usr\bin;C:\msys64\mingw64\bin;%PATH%
+          pacman -S --noconfirm --needed diffutils make nasm perl pkgconf mingw-w64-x86_64-nasm mingw-w64-x86_64-pkgconf mingw-w64-x86_64-perl mingw-w64-x86_64-gperf
+          if not exist "C:\msys64\usr\bin\pkg-config.exe" (
+              if exist "C:\msys64\mingw64\bin\pkg-config.exe" (
+                  copy /Y "C:\msys64\mingw64\bin\pkg-config.exe" "C:\msys64\usr\bin\pkg-config.exe"
+              )
+          )
+          if not exist "C:\msys64\usr\bin\nasm.exe" (
+              if exist "C:\msys64\mingw64\bin\nasm.exe" (
+                  copy /Y "C:\msys64\mingw64\bin\nasm.exe" "C:\msys64\usr\bin\nasm.exe"
+              )
+          )
+
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -36,6 +52,14 @@ jobs:
         with:
           arch: x64
           toolset: 14.44
+
+      - name: Cache Prepared Libraries
+        uses: actions/cache@v4
+        with:
+          path: Libraries/win64
+          key: tdesktop-libs-${{ runner.os }}-${{ hashFiles('tdesktop/Telegram/build/prepare/prepare.py') }}
+          restore-keys: |
+            tdesktop-libs-${{ runner.os }}-
 
       - name: Prepare Libraries
         shell: cmd
