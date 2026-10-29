@@ -11,6 +11,13 @@ jobs:
     runs-on: windows-latest
 
     steps:
+      - name: Configure Pagefile
+        uses: al-cheb/configure-pagefile-action@v1.4
+        with:
+          minimum-size: 32GB
+          maximum-size: 48GB
+          disk-root: "D:"
+
       - name: Prepare build environment
         shell: pwsh
         run: |
@@ -83,7 +90,7 @@ jobs:
       - name: Build AyuGram Release
         shell: cmd
         run: |
-          cmake --build "%GITHUB_WORKSPACE%\tdesktop\out" --config Release --target Telegram
+          cmake --build "%GITHUB_WORKSPACE%\tdesktop\out" --config Release --target Telegram -- /m:2
 
       - name: Package AyuGram Portable
         shell: pwsh
