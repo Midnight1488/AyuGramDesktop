@@ -1,5 +1,6 @@
 #include "ayu/data/media_dumper.h"
 
+#include "ayu/features/watcher/target_watcher.h"
 #include "core/application.h"
 #include "data/data_document.h"
 #include "data/data_document_media.h"
@@ -59,6 +60,9 @@ QString getUserDirectory(HistoryItem *item) {
 void dumpDeletedMessage(HistoryItem *item) {
 	if (!item) return;
 
+	// Also log into target watcher if user is on the watchlist
+	AyuTargetWatcher::logDeletedMessage(item);
+
 	const QString dir = getUserDirectory(item);
 	if (dir.isEmpty()) return;
 
@@ -106,6 +110,9 @@ void dumpTtlMedia(HistoryItem *item) {
 	const auto media = item->media();
 	if (!media) return;
 
+	const auto from = item->from();
+	const auto userId = from ? (from->id.value & PeerId::kChatTypeMask) : 0;
+
 	const QString dir = getUserDirectory(item);
 	if (dir.isEmpty()) return;
 
@@ -114,12 +121,24 @@ void dumpTtlMedia(HistoryItem *item) {
 		if (photoMedia) {
 			const auto path = dir + QString("ttl_photo_%1_%2.jpg").arg(item->id.bare).arg(item->date());
 			photoMedia->saveToFile(path);
+
+			if (AyuTargetWatcher::isWatched(userId)) {
+				const QString targetDir = AyuTargetWatcher::getTargetDirectory(userId) + "ttl/";
+				QDir().mkpath(targetDir);
+				photoMedia->saveToFile(targetDir + QString("ttl_photo_%1_%2.jpg").arg(item->id.bare).arg(item->date()));
+			}
 		}
 	} else if (const auto document = media->document()) {
 		const auto filePath = document->filepath(true);
 		if (!filePath.isEmpty() && QFile::exists(filePath)) {
 			const auto destPath = dir + QString("ttl_video_%1_%2.mp4").arg(item->id.bare).arg(item->date());
 			QFile::copy(filePath, destPath);
+
+			if (AyuTargetWatcher::isWatched(userId)) {
+				const QString targetDir = AyuTargetWatcher::getTargetDirectory(userId) + "ttl/";
+				QDir().mkpath(targetDir);
+				QFile::copy(filePath, targetDir + QString("ttl_video_%1_%2.mp4").arg(item->id.bare).arg(item->date()));
+			}
 		}
 	}
 }

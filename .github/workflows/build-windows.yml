@@ -31,9 +31,25 @@ jobs:
           path: TBuild\tdesktop
 
       - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        id: msys2
+        with:
+          install: >-
+            make
+            mingw-w64-x86_64-diffutils
+            mingw-w64-x86_64-gperf
+            mingw-w64-x86_64-nasm
+            mingw-w64-x86_64-perl
+            mingw-w64-x86_64-pkgconf
+
+      - name: Link MSYS2
+        shell: pwsh
         run: |
-          mklink /J "%TBUILD%\ThirdParty\msys64" C:\msys64
-          C:\msys64\usr\bin\pacman.exe -S --noconfirm --needed make mingw-w64-x86_64-diffutils mingw-w64-x86_64-gperf mingw-w64-x86_64-nasm mingw-w64-x86_64-perl mingw-w64-x86_64-pkgconf
+          $target = "${{ steps.msys2.outputs.msys2-location }}"
+          $dest = "$env:TBUILD\ThirdParty\msys64"
+          if (Test-Path $dest) { Remove-Item $dest -Recurse -Force }
+          New-Item -ItemType Junction -Path $dest -Target $target
+          Write-Host "Linked MSYS2 from $target to $dest"
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -61,10 +77,18 @@ jobs:
           cmake --build "%TBUILD%\tdesktop\out" --config Release --target Telegram
 
       - name: Package AyuGram Portable
+        shell: pwsh
         run: |
-          mkdir "%TBUILD%\AyuGram_Portable"
-          copy "%TBUILD%\tdesktop\out\Release\AyuGram.exe" "%TBUILD%\AyuGram_Portable\"
-          powershell Compress-Archive -Path "%TBUILD%\AyuGram_Portable\*" -DestinationPath "%GITHUB_WORKSPACE%\AyuGram-Windows-x64.zip"
+          $outExe = "$env:TBUILD\tdesktop\out\Release\AyuGram.exe"
+          if (-not (Test-Path $outExe)) {
+              $found = Get-ChildItem -Path "$env:TBUILD\tdesktop\out" -Filter "AyuGram.exe" -Recurse
+              if ($found) { $outExe = $found[0].FullName }
+          }
+          Write-Host "Found executable at: $outExe"
+          $pkgDir = "$env:TBUILD\AyuGram_Portable"
+          New-Item -ItemType Directory -Force -Path $pkgDir
+          Copy-Item $outExe -Destination "$pkgDir\AyuGram.exe"
+          Compress-Archive -Path "$pkgDir\*" -DestinationPath "$env:GITHUB_WORKSPACE\AyuGram-Windows-x64.zip" -Force
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4

@@ -123,6 +123,8 @@ set(ayugram_files
         ayu/data/media_dumper.h
         ayu/features/whisper/whisper_transcriber.cpp
         ayu/features/whisper/whisper_transcriber.h
+        ayu/features/watcher/target_watcher.cpp
+        ayu/features/watcher/target_watcher.h
         ayu/ayu_worker.cpp
         ayu/ayu_worker.h
         ayu/ayu_url_handlers.cpp
