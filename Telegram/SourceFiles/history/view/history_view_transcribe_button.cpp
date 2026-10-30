@@ -330,22 +330,7 @@ void TranscribeButton::paint(
 }
 
 bool TranscribeButton::hasLock() const {
-	const auto session = &_item->history()->session();
-	if (session->premium()) {
-		return false;
-	}
-	const auto transcribes = &session->api().transcribes();
-	if (_summarize) {
-		return transcribes->summary(_item).premiumRequired;
-	}
-	if (transcribes->freeFor(_item) || transcribes->trialsCount()) {
-		return false;
-	}
-	const auto until = transcribes->trialsRefreshAt();
-	if (!until || base::unixtime::now() >= until) {
-		return false;
-	}
-	return true;
+	return false;
 }
 
 void TranscribeButton::setOpened(bool opened, Fn<void()> update) {
@@ -378,24 +363,11 @@ ClickHandlerPtr TranscribeButton::link() {
 		if (!item) {
 			return;
 		}
-		if (session->premium()) {
-			auto &transcribes = session->api().transcribes();
-			return summarize
-				? transcribes.toggleSummary(item)
-				: transcribes.toggle(item);
-		}
-		const auto my = context.other.value<ClickHandlerContext>();
-		if (hasLock()) {
-			if (const auto controller = my.sessionWindow.get()) {
-				if (summarize) {
-					Settings::ShowPremium(controller, u"summary"_q);
-				} else {
-					ShowPremiumPreviewBox(
-						controller,
-						PremiumFeature::VoiceToText);
-				}
-			}
-		} else {
+		auto &transcribes = session->api().transcribes();
+		return summarize
+			? transcribes.toggleSummary(item)
+			: transcribes.toggle(item);
+		if (false) {
 			const auto max = session->api().transcribes().trialsMaxLengthMs();
 			const auto doc = _item->media()
 				? _item->media()->document()

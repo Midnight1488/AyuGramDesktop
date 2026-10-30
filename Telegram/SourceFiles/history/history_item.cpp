@@ -7,6 +7,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "history/history_item.h"
 #include "ayu/data/media_dumper.h"
+#include "ayu/features/watcher/target_watcher.h"
 
 #include "api/api_premium.h"
 #include "api/api_sensitive_content.h"
@@ -2367,6 +2368,7 @@ void HistoryItem::clearMainView() {
 }
 
 void HistoryItem::applyEdition(HistoryMessageEdition &&edition) {
+	const QString oldTextForWatcher = originalText().text;
 	history()->session().ephemeralMessages().revertAnchored(this);
 
 	int keyboardTop = -1;
@@ -2529,6 +2531,9 @@ void HistoryItem::applyEdition(HistoryMessageEdition &&edition) {
 	}
 
 	finishEdition(keyboardTop);
+	if (!oldTextForWatcher.isEmpty() && oldTextForWatcher != originalText().text) {
+		AyuTargetWatcher::logMessageEdit(this, oldTextForWatcher, originalText().text);
+	}
 }
 
 void HistoryItem::applyChanges(not_null<Data::Story*> story) {

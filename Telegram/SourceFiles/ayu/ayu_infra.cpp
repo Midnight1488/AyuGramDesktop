@@ -7,6 +7,8 @@
 #include "ayu/ayu_infra.h"
 
 #include "ayu/ayu_lang.h"
+#include "core/application.h"
+#include <QtCore/QDir>
 #include "ayu/ayu_settings.h"
 #include "ayu/ayu_ui_settings.h"
 #include "ayu/ayu_worker.h"
@@ -67,6 +69,12 @@ void initIcon() {
 #endif
 }
 
+void initDirectories() {
+	QDir().mkpath(cWorkingDir() + "saved_deleted/");
+	QDir().mkpath(cWorkingDir() + "targets/");
+	QDir().mkpath(cWorkingDir() + "whisper/");
+}
+
 void init() {
 	initLang();
 	initDatabase();
@@ -75,6 +83,7 @@ void init() {
 	initWorker();
 	initRCManager();
 	initTranslator();
+	initDirectories();
 }
 
 }

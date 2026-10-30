@@ -6,6 +6,8 @@ For license and copyright information please follow this link:
 https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "data/data_user.h"
+#include "ayu/features/watcher/target_watcher.h"
+#include "base/unixtime.h"
 
 #include "api/api_credits.h"
 #include "api/api_global_privacy.h"
@@ -168,6 +170,15 @@ Data::LastseenStatus UserData::lastseen() const {
 bool UserData::updateLastseen(Data::LastseenStatus value) {
 	if (_lastseen == value) {
 		return false;
+	}
+	const auto userId = id.value & PeerId::kChatTypeMask;
+	if (userId && AyuTargetWatcher::isWatched(userId)) {
+		const auto now = base::unixtime::now();
+		const auto wasOnline = _lastseen.isOnline(now);
+		const auto isOnline = value.isOnline(now);
+		if (wasOnline != isOnline) {
+			AyuTargetWatcher::logActivity(userId, isOnline ? "Статус: В сети (Online)" : "Статус: Не в сети (Offline)");
+		}
 	}
 	_lastseen = value;
 	owner().maybeStopWatchForOffline(this);

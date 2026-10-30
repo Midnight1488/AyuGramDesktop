@@ -218,29 +218,82 @@ void transcribe(not_null<HistoryItem*> item) {
 	auto &session = item->history()->session();
 	const auto fullId = item->fullId();
 
-	QString audioPath = doc->filepath(true);
-	if (audioPath.isEmpty()) {
-		doc->save(Data::FileOrigin(), QString());
-		audioPath = doc->loadingFilePath();
+	const auto mediaView = doc->createMediaView();
+	const QString tempAudioPath = cWorkingDir() + "whisper/temp_" + QString::number(item->id.bare) + (doc->isVideoMessage() ? ".mp4" : ".ogg");
+
+	if (doc->filepath(true).isEmpty()) {
+		if (mediaView && !mediaView->bytes().isEmpty()) {
+			QFile f(tempAudioPath);
+			if (f.open(QIODevice::WriteOnly)) {
+				f.write(mediaView->bytes());
+				f.close();
+			}
+		} else {
+			doc->save(Data::FileOrigin(), tempAudioPath);
+			if (mediaView) {
+				mediaView->automaticLoad(fullId, item);
+			}
+		}
 	}
 
 	ensureModel([=, &session](bool modelOk) {
 		if (!modelOk) {
+			crl::on_main(&session, [=, &session]() {
+				if (const auto targetItem = session.data().message(fullId)) {
+					session.api().transcribes().applyCustomResult(targetItem, "[Whisper: Ошибка загрузки модели ggml-base.bin]");
+				}
+			});
 			return;
 		}
 
 		crl::async([=, &session]() {
 			QString resolvedPath = doc->filepath(true);
+			if (resolvedPath.isEmpty() && QFile::exists(tempAudioPath) && QFile(tempAudioPath).size() > 0) {
+				resolvedPath = tempAudioPath;
+			}
+
 			if (resolvedPath.isEmpty()) {
+				for (int i = 0; i < 30; ++i) {
+					QThread::msleep(200);
+					if (QFile::exists(tempAudioPath) && QFile(tempAudioPath).size() > 0) {
+						resolvedPath = tempAudioPath;
+						break;
+					}
+					if (!doc->filepath(true).isEmpty() && QFile::exists(doc->filepath(true))) {
+						resolvedPath = doc->filepath(true);
+						break;
+					}
+				}
+			}
+
+			if (resolvedPath.isEmpty()) {
+				crl::on_main(&session, [=, &session]() {
+					if (const auto targetItem = session.data().message(fullId)) {
+						session.api().transcribes().applyCustomResult(targetItem, "[Whisper: Не удалось загрузить аудио]");
+					}
+				});
 				return;
 			}
 
 			const auto pcm = decodeAudioTo16kMono(resolvedPath);
+			if (pcm.empty()) {
+				crl::on_main(&session, [=, &session]() {
+					if (const auto targetItem = session.data().message(fullId)) {
+						session.api().transcribes().applyCustomResult(targetItem, "[Whisper: Ошибка декодирования аудио]");
+					}
+				});
+				return;
+			}
+
 			const QString text = runWhisperInference(getModelPath(), pcm);
+
+			if (resolvedPath == tempAudioPath) {
+				QFile::remove(tempAudioPath);
+			}
 
 			crl::on_main(&session, [=, &session]() {
 				if (const auto targetItem = session.data().message(fullId)) {
-					session.api().transcribes().applyCustomResult(targetItem, text);
+					session.api().transcribes().applyCustomResult(targetItem, text.isEmpty() ? "[Whisper: Речь не обнаружена]" : text);
 				}
 			});
 		});

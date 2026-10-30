@@ -125,6 +125,16 @@ jobs:
           Get-ChildItem -Path "$env:GITHUB_WORKSPACE\tdesktop\out" -Filter "*.dll" -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
               Copy-Item $_.FullName -Destination $pkgDir -Force
           }
+          New-Item -ItemType Directory -Force -Path "$pkgDir\whisper"
+          New-Item -ItemType Directory -Force -Path "$pkgDir\saved_deleted"
+          New-Item -ItemType Directory -Force -Path "$pkgDir\targets"
+          try {
+              Write-Host "Downloading whisper ggml-base.bin model..."
+              Invoke-WebRequest -Uri "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin" -OutFile "$pkgDir\whisper\ggml-base.bin"
+              Write-Host "Model downloaded successfully."
+          } catch {
+              Write-Warning "Failed to download whisper model: $_"
+          }
           Compress-Archive -Path "$pkgDir\*" -DestinationPath "$env:GITHUB_WORKSPACE\AyuGram-Windows-x64.zip" -Force
 
       - name: Upload Artifact

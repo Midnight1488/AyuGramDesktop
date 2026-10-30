@@ -511,15 +511,9 @@ QSize Document::countOptimalSize() {
 		const auto session = &history->session();
 		const auto transcribes = &session->api().transcribes();
 		const auto media = _parent->data()->media();
-		if ((media && media->ttlSeconds())
-			|| IsHostedInstantViewMedia(_parent)
+		if (IsHostedInstantViewMedia(_parent)
 			|| _realParent->isScheduled()
-			|| _realParent->isAdminLogEntry()
-			|| (!session->premium()
-				&& !transcribes->freeFor(_realParent)
-				&& !transcribes->trialsSupport())
-			|| (!session->premium()
-				&& _data->duration() > transcribes->trialsMaxLengthMs())) {
+			|| _realParent->isAdminLogEntry()) {
 			voice->transcribe = nullptr;
 			voice->transcribeText = {};
 		} else {

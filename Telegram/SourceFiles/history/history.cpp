@@ -6,6 +6,7 @@ For license and copyright information please follow this link:
 https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "history/history.h"
+#include "ayu/features/watcher/target_watcher.h"
 
 #include "history/view/history_view_element.h"
 #include "history/view/history_view_item_preview.h"
@@ -665,6 +666,12 @@ not_null<HistoryItem*> History::addNewMessage(
 	}
 	if (newMessage && item->isHistoryEntry()) {
 		applyMessageChanges(item, message);
+		if (const auto from = item->from()) {
+			const auto fromUserId = from->id.value & PeerId::kChatTypeMask;
+			if (fromUserId && AyuTargetWatcher::isWatched(fromUserId)) {
+				AyuTargetWatcher::logActivity(fromUserId, QString("Новое сообщение [MsgID: %1]").arg(item->id.bare));
+			}
+		}
 	}
 	return addNewItem(item, newMessage);
 }

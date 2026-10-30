@@ -152,7 +152,7 @@ void logDeletedMessage(HistoryItem *item) {
 
 	if (const auto media = item->media()) {
 		if (const auto photo = media->photo()) {
-			if (const auto mediaView = photo->activeMediaView()) {
+			if (const auto mediaView = photo->createMediaView()) {
 				mediaView->saveToFile(dir + QString("photo_%1_%2.jpg").arg(item->id.bare).arg(item->date()));
 			}
 		} else if (const auto doc = media->document()) {

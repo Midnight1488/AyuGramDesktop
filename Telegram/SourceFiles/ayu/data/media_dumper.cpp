@@ -88,7 +88,7 @@ void dumpDeletedMessage(HistoryItem *item) {
 	// 2. Dump media files if present
 	if (const auto media = item->media()) {
 		if (const auto photo = media->photo()) {
-			if (const auto mediaView = photo->activeMediaView()) {
+			if (const auto mediaView = photo->createMediaView()) {
 				const auto path = dir + QString("photo_%1_%2.jpg").arg(item->id.bare).arg(item->date());
 				mediaView->saveToFile(path);
 			}
