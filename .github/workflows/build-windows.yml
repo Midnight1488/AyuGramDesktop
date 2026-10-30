@@ -74,13 +74,6 @@ jobs:
           cd /d "%GITHUB_WORKSPACE%\tdesktop"
           call Telegram\build\prepare\win.bat silent qt6
 
-      - name: Save Prepared Libraries Cache
-        if: always()
-        uses: actions/cache/save@v4
-        with:
-          path: Libraries/win64
-          key: tdesktop-libs-${{ runner.os }}-${{ github.run_id }}
-
       - name: Configure CMake
         shell: cmd
         run: |
@@ -90,7 +83,7 @@ jobs:
       - name: Build AyuGram Release
         shell: cmd
         run: |
-          cmake --build "%GITHUB_WORKSPACE%\tdesktop\out" --config Release --target Telegram -- /m:2
+          cmake --build "%GITHUB_WORKSPACE%\tdesktop\out" --config Release --target Telegram
 
       - name: Package AyuGram Portable
         shell: pwsh
