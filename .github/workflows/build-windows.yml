@@ -74,6 +74,28 @@ jobs:
           cd /d "%GITHUB_WORKSPACE%\tdesktop"
           call Telegram\build\prepare\win.bat silent qt6
 
+      - name: Fix Library Filenames for CMake
+        shell: pwsh
+        run: |
+          Get-ChildItem -Path "$env:GITHUB_WORKSPACE\Libraries" -Filter "libzs.lib" -Recurse | ForEach-Object {
+              $dir = $_.DirectoryName
+              Copy-Item $_.FullName "$dir\zlibstatic.lib" -Force
+              Copy-Item $_.FullName "$dir\zlib.lib" -Force
+              Write-Host "Created $dir\zlibstatic.lib and zlib.lib"
+          }
+          Get-ChildItem -Path "$env:GITHUB_WORKSPACE\Libraries" -Filter "libzsd.lib" -Recurse | ForEach-Object {
+              $dir = $_.DirectoryName
+              Copy-Item $_.FullName "$dir\zlibstaticd.lib" -Force
+              Copy-Item $_.FullName "$dir\zlibd.lib" -Force
+              Write-Host "Created $dir\zlibstaticd.lib and zlibd.lib"
+          }
+          Get-ChildItem -Path "$env:GITHUB_WORKSPACE\Libraries" -Filter "*minizip*.lib" -Recurse | ForEach-Object {
+              $dir = $_.DirectoryName
+              Copy-Item $_.FullName "$dir\minizipstatic.lib" -Force -ErrorAction SilentlyContinue
+              Copy-Item $_.FullName "$dir\minizip.lib" -Force -ErrorAction SilentlyContinue
+              Copy-Item $_.FullName "$dir\libminizips.lib" -Force -ErrorAction SilentlyContinue
+          }
+
       - name: Configure CMake
         shell: cmd
         run: |
