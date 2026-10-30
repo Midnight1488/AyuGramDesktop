@@ -5,6 +5,7 @@
 #include "core/application.h"
 #include "data/data_document.h"
 #include "data/data_document_media.h"
+#include "data/data_file_origin.h"
 #include "data/data_session.h"
 #include "history/history.h"
 #include "history/history_item.h"
@@ -185,7 +186,8 @@ void ensureModel(std::function<void(bool success)> onDone) {
 	}
 
 	auto *nam = new QNetworkAccessManager();
-	QNetworkRequest req(QUrl(kModelUrl));
+	QNetworkRequest req;
+	req.setUrl(QUrl(kModelUrl));
 	req.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
 
 	QNetworkReply *reply = nam->get(req);
