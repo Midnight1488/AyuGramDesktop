@@ -20,12 +20,14 @@ extern "C" {
 #include <libswresample/swresample.h>
 }
 
-#include <QDir>
-#include <QFile>
-#include <QNetworkAccessManager>
-#include <QNetworkReply>
-#include <QNetworkRequest>
-#include <QThread>
+#include <QtCore/QDir>
+#include <QtCore/QFile>
+#include <QtCore/QUrl>
+#include <QtCore/QVariant>
+#include <QtCore/QThread>
+#include <QtNetwork/QNetworkAccessManager>
+#include <QtNetwork/QNetworkReply>
+#include <QtNetwork/QNetworkRequest>
 #include <algorithm>
 #include <vector>
 

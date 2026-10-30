@@ -100,6 +100,9 @@ jobs:
           $pkgDir = "$env:GITHUB_WORKSPACE\AyuGram_Portable"
           New-Item -ItemType Directory -Force -Path $pkgDir
           Copy-Item $exePath -Destination "$pkgDir\AyuGram.exe"
+          Get-ChildItem -Path "$env:GITHUB_WORKSPACE\tdesktop\out" -Filter "*.dll" -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
+              Copy-Item $_.FullName -Destination $pkgDir -Force
+          }
           Compress-Archive -Path "$pkgDir\*" -DestinationPath "$env:GITHUB_WORKSPACE\AyuGram-Windows-x64.zip" -Force
 
       - name: Upload Artifact
