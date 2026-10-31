@@ -364,28 +364,10 @@ ClickHandlerPtr TranscribeButton::link() {
 			return;
 		}
 		auto &transcribes = session->api().transcribes();
-		return summarize
-			? transcribes.toggleSummary(item)
-			: transcribes.toggle(item);
-		if (false) {
-			const auto max = session->api().transcribes().trialsMaxLengthMs();
-			const auto doc = _item->media()
-				? _item->media()->document()
-				: nullptr;
-			if (doc && (doc->isVoiceMessage() || doc->isVideoMessage())) {
-				if (doc->duration() > max) {
-					if (const auto controller = my.sessionWindow.get()) {
-						controller->uiShow()->showToast(
-							tr::lng_audio_transcribe_long(tr::now));
-						return;
-					}
-				}
-			}
-			if (summarize) {
-				session->api().transcribes().toggleSummary(item);
-			} else {
-				session->api().transcribes().toggle(item);
-			}
+		if (summarize) {
+			transcribes.toggleSummary(item);
+		} else {
+			transcribes.toggle(item);
 		}
 	});
 	return _link;
